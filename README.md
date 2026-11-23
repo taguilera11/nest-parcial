@@ -63,3 +63,14 @@ API REST en NestJS y Mongoose para la gestión de **Usuarios (`/users`)** y **Ta
 | `POST` | `/tasks` | Restringido (`Authorization: admin-secret-token`) | Crear una tarea asociada a un usuario |
 
 También puedes importar `nest-parcial.postman_collection.json` en Postman o utilizar `requests.http` con la extensión REST Client de VS Code para probar manualmente los endpoints.
+
+
+## Cambios realizados
+
+Caso 1: Creé el CreateTaskDto en src/tasks/dto con class-validator y class-transformer, solo acepta title, description, completed y userId. En main.ts agregué el ValidationPipe global con whitelist: true y forbidNonWhitelisted: true, así sii llega un campo que no está en el DTO la API responde 400 en vez de guardarlo. El pipe lo registré antes de app.listen(). También cambié el scema de tareas a strict: true para que Mongoose no guarde atributos que no están en el modelo
+
+Caso 2: UsersModule ahora exporta UsersService. En TasksModule saqué UserSchema del forFeature y en su lugar importé UsersModule, así tareas ya no accede directo a la colección de usuarios y revisa que el usuario exista con usersService.findById()
+
+Caso 3: Eliminé el middleware que bloqueaba todas las rutas de /tasks. En su lugar hice un AuthGuard en src/common/guards/auth.guard.ts que revisa que venga Authorization: admin-secret-token y si no lanza ForbiddenException. El guard está solo en POST /tasks, entonces GET /tasks y GET /tasks/:id quedan públicas.
+
+Caso 4: Saqué del controlador las inyecciones de TaskModel y UserModel, ahora solo depende de TasksService. La lógica para crear la tarea (validar el usuario y guardarla la pasé a TasksService.create() y el POST /tasks solo recibe el DTO y llama al servicio.
